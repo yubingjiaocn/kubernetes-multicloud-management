@@ -36,6 +36,8 @@ In the following sections we will be explaining the concepts above. However, for
     + `update`
     + `patch`
 * If the `operator-role` does not exist, MCM will **enforce** it into existence.
+* Each cluster is required to have a **ClusterImagePolicy** called `ibmcloud-default-cluster-image-policy`
+* The `ibmcloud-default-cluster-image-policy` allows image to be pulled from Dockerhub (docker.io)
 * The enforcement applies only to clusters with the following labels and values:
     + **vendor**: ICP
 
@@ -127,6 +129,18 @@ spec:
             apiGroups: ["core"]
             resources: ["pods"]
             verbs: ["get", "list", "watch"]
+  object-templates:
+  - complianceType: "musthave"
+    objectDefinition:
+      apiVersion: securityenforcement.admission.cloud.ibm.com/v1beta1
+      kind: ClusterImagePolicy
+      metadata:
+        name: ibmcloud-default-cluster-image-policy
+      spec:
+        repositories:
+        # Docker hub Container Registry
+        - name: "docker.io/*"
+          policy:
 ```
 
 Here is a breakdown of the fields above:
@@ -141,9 +155,7 @@ Here is a breakdown of the fields above:
         - **include**: Array or expression of namespaces to INCLUDE in the policy checks.
         - **exclude**: Array or expression of namespaces to EXCLUDE in the policy checks.
     + **role-templates**: List of Templates (`RoleTemplates` in this case), which contain the rules to enforce.
-        - **NOTE**: You could also use `object-templates` field (not shown above) to create templates for Kubernetes resources of any kind.
-
-Note that, we skipped `role-templates` as we already broke down and explained the contents of a Template. The only comment to add is that the templates' namespace will be inherited from the Policy's `namespaces` field.
+    + **object-templates**: List of Templates (`ibmcloud-default-cluster-image-policy` in this case) to create templates for Kubernetes resources of any kind (Including Kubernetes CRD). The templates' namespace will be inherited from the Policy's `namespaces` field. 
 
 ### Compliance
 We now understand that a `Template` defines the rules to enforce and a `Policy` defines how and where (namespaces) the rules are enforced in a cluster. However, a `Policy` must still be a applied to each cluster. Applying the policies manually may be fine for 1 or 2 clusters. But once again, the more abundant and more granular the policies become and the more clusters you have to manage, the more cumbersome managing the policies become.
